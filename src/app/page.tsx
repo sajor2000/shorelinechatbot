@@ -228,7 +228,6 @@ export default function ChatWidget() {
   const [followUpSuggestions, setFollowUpSuggestions] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const greetingFired = useRef(false);
   const pageUrlRef = useRef(pageUrl);
 
   useEffect(() => {
@@ -244,12 +243,10 @@ export default function ChatWidget() {
       pageUrlRef.current = page;
     }
 
-    if (greetingFired.current) return;
-    greetingFired.current = true;
-
     const timer = setTimeout(async () => {
       setStreaming(true);
       setMessages([{ role: "assistant", content: "" }]);
+      const fallback = "Hi there! Welcome to Shoreline Dental. How can I help you today?";
       try {
         const currentPage = pageUrlRef.current;
         const res = await fetch("/api/chat", {
@@ -261,42 +258,45 @@ export default function ChatWidget() {
           }),
         });
         if (!res.ok) {
-          setMessages([{ role: "assistant", content: "Hi there! Welcome to Shoreline Dental. How can I help you today?" }]);
+          setMessages([{ role: "user", content: "[GREETING]" }, { role: "assistant", content: fallback }]);
           return;
         }
         const reader = res.body?.getReader();
         if (!reader) return;
-        const decoder = new TextDecoder();
-        let text = "";
-        let buffer = "";
-        outer: while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const payload = line.slice(6);
-            if (payload === "[DONE]") break outer;
-            try {
-              const data = JSON.parse(payload);
-              if (data.text) {
-                text += data.text;
-                setMessages([{ role: "assistant", content: text }]);
-              }
-              if (data.suggestions) {
-                setFollowUpSuggestions(data.suggestions.slice(0, 2));
-              }
-            } catch { /* partial chunk */ }
+        try {
+          const decoder = new TextDecoder();
+          let text = "";
+          let buffer = "";
+          outer: while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              const payload = line.slice(6);
+              if (payload === "[DONE]") break outer;
+              try {
+                const data = JSON.parse(payload);
+                if (data.text) {
+                  text += data.text;
+                  setMessages([{ role: "user", content: "[GREETING]" }, { role: "assistant", content: text }]);
+                }
+                if (data.suggestions) {
+                  setFollowUpSuggestions(data.suggestions.filter((s: unknown): s is string => typeof s === "string").map((s: string) => s.slice(0, 80)).slice(0, 2));
+                }
+              } catch { /* partial chunk */ }
+            }
           }
-        }
-        reader.releaseLock();
-        if (!text) {
-          setMessages([{ role: "assistant", content: "Hi there! Welcome to Shoreline Dental. How can I help you today?" }]);
+          if (!text) {
+            setMessages([{ role: "user", content: "[GREETING]" }, { role: "assistant", content: fallback }]);
+          }
+        } finally {
+          reader.releaseLock();
         }
       } catch {
-        setMessages([{ role: "assistant", content: "Hi there! Welcome to Shoreline Dental. How can I help you today?" }]);
+        setMessages([{ role: "user", content: "[GREETING]" }, { role: "assistant", content: fallback }]);
       } finally {
         setStreaming(false);
       }
@@ -339,47 +339,50 @@ export default function ChatWidget() {
       const reader = res.body?.getReader();
       if (!reader) return;
 
-      const decoder = new TextDecoder();
-      let assistantText = "";
-      let buffer = "";
-      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      try {
+        const decoder = new TextDecoder();
+        let assistantText = "";
+        let buffer = "";
+        setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
-      outer: while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
+        outer: while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
 
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const payload = line.slice(6);
-          if (payload === "[DONE]") break outer;
-          try {
-            const data = JSON.parse(payload);
-            if (data.error) {
-              setMessages((prev) => {
-                const next = [...prev];
-                next[next.length - 1] = { role: "assistant", content: assistantText || "Sorry, something went wrong." };
-                return next;
-              });
-              break outer;
-            }
-            if (data.text) {
-              assistantText += data.text;
-              setMessages((prev) => {
-                const next = [...prev];
-                next[next.length - 1] = { role: "assistant", content: assistantText };
-                return next;
-              });
-            }
-            if (data.suggestions) {
-              setFollowUpSuggestions(data.suggestions.slice(0, 2));
-            }
-          } catch { /* partial chunk */ }
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const payload = line.slice(6);
+            if (payload === "[DONE]") break outer;
+            try {
+              const data = JSON.parse(payload);
+              if (data.error) {
+                setMessages((prev) => {
+                  const next = [...prev];
+                  next[next.length - 1] = { role: "assistant", content: assistantText || "Sorry, something went wrong." };
+                  return next;
+                });
+                break outer;
+              }
+              if (data.text) {
+                assistantText += data.text;
+                setMessages((prev) => {
+                  const next = [...prev];
+                  next[next.length - 1] = { role: "assistant", content: assistantText };
+                  return next;
+                });
+              }
+              if (data.suggestions) {
+                setFollowUpSuggestions(data.suggestions.filter((s: unknown): s is string => typeof s === "string").map((s: string) => s.slice(0, 80)).slice(0, 2));
+              }
+            } catch { /* partial chunk */ }
+          }
         }
+      } finally {
+        reader.releaseLock();
       }
-      reader.releaseLock();
     } catch {
       setMessages((prev) => {
         const next = [...prev];
@@ -460,7 +463,7 @@ export default function ChatWidget() {
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ scrollBehavior: "smooth" }}>
 
-          {messages.map((msg, i) => (
+          {messages.filter(m => !(m.role === "user" && m.content === "[GREETING]")).map((msg, i) => (
             <div
               key={i}
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-slideUp`}
@@ -494,7 +497,7 @@ export default function ChatWidget() {
             </div>
           ))}
 
-          {messages.length === 1 && messages[0].role === "assistant" && messages[0].content && !streaming && (
+          {messages.length === 2 && messages[0].role === "user" && messages[0].content === "[GREETING]" && messages[1].role === "assistant" && messages[1].content && !streaming && (
             <div className="w-full space-y-2 animate-fadeIn">
               {getSuggestions(pageUrl).map((q) => (
                 <button
@@ -510,9 +513,9 @@ export default function ChatWidget() {
 
           {followUpSuggestions.length > 0 && !streaming && (
             <div className="flex flex-wrap gap-2 ml-9 animate-fadeIn">
-              {followUpSuggestions.map((s) => (
+              {followUpSuggestions.map((s, i) => (
                 <button
-                  key={s}
+                  key={i}
                   onClick={() => sendMessage(s)}
                   className="text-xs text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-full px-3 py-1.5 transition-all duration-150 active:scale-[0.98]"
                 >

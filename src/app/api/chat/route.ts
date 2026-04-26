@@ -40,7 +40,7 @@ const encoder = new TextEncoder();
 // Keeps Latin scripts (English, Spanish, Polish), common punctuation, and whitespace.
 const GARBAGE_RE = /[^\p{Script=Latin}\p{Script=Common}\p{Script=Inherited}\s]/gu;
 function sanitizeText(text: string): string {
-  return text.replace(GARBAGE_RE, "").replace(/ {2,}/g, " ");
+  return text.replace(GARBAGE_RE, " ").replace(/ {2,}/g, " ");
 }
 
 const openai =
@@ -216,14 +216,17 @@ export async function POST(request: NextRequest) {
 
   let stream;
   try {
-    stream = await openai.chat.completions.create({
-      model: CHAT_MODEL,
-      max_tokens: 512,
-      temperature: 0.9,
-      stream: true,
-      tools: TOOLS,
-      messages: chatMessages,
-    });
+    stream = await openai.chat.completions.create(
+      {
+        model: CHAT_MODEL,
+        max_tokens: 512,
+        temperature: 0.9,
+        stream: true,
+        tools: TOOLS,
+        messages: chatMessages,
+      },
+      { signal: abort.signal },
+    );
   } catch (err) {
     clearTimeout(abortTimer);
     console.error("upstream error", err instanceof Error ? err.message : err);
@@ -334,14 +337,17 @@ export async function POST(request: NextRequest) {
               })),
             };
 
-            const followUp = await openai.chat.completions.create({
-              model: CHAT_MODEL,
-              max_tokens: 512,
-              temperature: 0.9,
-              stream: true,
-              tool_choice: "none",
-              messages: [...chatMessages, assistantMsg, ...toolResultMsgs],
-            });
+            const followUp = await openai.chat.completions.create(
+              {
+                model: CHAT_MODEL,
+                max_tokens: 512,
+                temperature: 0.9,
+                stream: true,
+                tool_choice: "none",
+                messages: [...chatMessages, assistantMsg, ...toolResultMsgs],
+              },
+              { signal: abort.signal },
+            );
 
             for await (const chunk of followUp) {
               if (abort.signal.aborted) throw new Error("Request timeout");
