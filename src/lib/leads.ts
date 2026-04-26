@@ -9,6 +9,17 @@ export interface Lead {
   capturedAt: string;
 }
 
+const REDIS_TIMEOUT_MS = 3000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("timeout")), ms)
+    ),
+  ]);
+}
+
 let _redis: Redis | null = null;
 function getRedis(): Redis | null {
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
@@ -16,6 +27,23 @@ function getRedis(): Redis | null {
   }
   if (!_redis) _redis = Redis.fromEnv();
   return _redis;
+}
+
+let _resend: Resend | null = null;
+function getResend(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  if (!_resend) _resend = new Resend(apiKey);
+  return _resend;
+}
+
+function isLead(value: unknown): value is Lead {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "reason" in value &&
+    typeof (value as Record<string, unknown>).reason === "string"
+  );
 }
 
 function escapeHtml(str: string): string {
@@ -122,17 +150,23 @@ export async function saveLead(lead: Lead): Promise<void> {
     return;
   }
 
-  await redis.lpush("shoreline-leads", JSON.stringify(lead));
+  try {
+    await withTimeout(
+      redis.lpush("shoreline-leads", JSON.stringify(lead)),
+      REDIS_TIMEOUT_MS
+    );
+  } catch (err) {
+    console.error("redis lpush error", err instanceof Error ? err.message : err);
+  }
 
-  const apiKey = process.env.RESEND_API_KEY;
+  const resend = getResend();
   const to = process.env.LEAD_NOTIFICATION_EMAIL;
-  if (apiKey && to) {
+  if (resend && to) {
     const safeName = (lead.name || "Website Visitor")
       .replace(/[\r\n]/g, "")
       .slice(0, 100);
-    const resend = new Resend(apiKey);
-    resend.emails
-      .send({
+    try {
+      await resend.emails.send({
         from:
           process.env.RESEND_FROM_EMAIL ??
           "Lab Sync <notifications@labsync.space>",
@@ -150,13 +184,10 @@ export async function saveLead(lead: Lead): Promise<void> {
         ]
           .filter(Boolean)
           .join("\n"),
-      })
-      .catch((err) =>
-        console.error(
-          "lead email error",
-          err instanceof Error ? err.message : err
-        )
-      );
+      });
+    } catch (err) {
+      console.error("lead email error", err instanceof Error ? err.message : err);
+    }
   }
 }
 
@@ -164,13 +195,14 @@ export async function getLeads(limit = 50): Promise<Lead[]> {
   const redis = getRedis();
   if (!redis) return [];
 
-  const raw = await redis.lrange("shoreline-leads", 0, limit - 1);
+  const raw = await withTimeout(
+    redis.lrange("shoreline-leads", 0, limit - 1),
+    REDIS_TIMEOUT_MS
+  );
   return raw.flatMap((item) => {
     try {
       const parsed = typeof item === "string" ? JSON.parse(item) : item;
-      if (parsed && typeof parsed === "object" && "reason" in parsed) {
-        return [parsed as Lead];
-      }
+      if (isLead(parsed)) return [parsed];
       return [];
     } catch {
       return [];

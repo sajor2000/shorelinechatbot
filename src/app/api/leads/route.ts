@@ -1,10 +1,10 @@
 import { type NextRequest } from "next/server";
-import { timingSafeEqual } from "crypto";
+import { timingSafeEqual, createHash } from "crypto";
 import { getLeads } from "@/lib/leads";
 
 function isValidKey(provided: string, expected: string): boolean {
-  if (provided.length !== expected.length) return false;
-  return timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+  const hash = (s: string) => createHash("sha256").update(s).digest();
+  return timingSafeEqual(hash(provided), hash(expected));
 }
 
 export async function GET(request: NextRequest) {

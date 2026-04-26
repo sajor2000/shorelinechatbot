@@ -12,9 +12,10 @@ const ALLOWED_ORIGINS = [
   ...(process.env.NODE_ENV !== "production" ? ["http://localhost:3000"] : []),
 ];
 
-function getCorsHeaders(origin: string | null) {
+function getCorsHeaders(origin: string | null): Record<string, string> {
   const allowedOrigin =
-    origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+    origin && ALLOWED_ORIGINS.includes(origin) ? origin : null;
+  if (!allowedOrigin) return {};
   return {
     "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -33,6 +34,7 @@ const MAX_CONTENT_LENGTH = 4000;
 const UPSTREAM_TIMEOUT_MS = 8000;
 const CHAT_MODEL =
   process.env.CHAT_MODEL ?? "google/gemini-3-flash-preview";
+const encoder = new TextEncoder();
 
 const openai =
   process.env.OPENROUTER_API_KEY
@@ -100,7 +102,7 @@ export async function POST(request: NextRequest) {
         );
       }
     } catch (err) {
-      console.error("rate-limiter error, failing open", err instanceof Error ? err.message : err);
+      console.error("rate-limiter error, failing open", { event: "ratelimit_open", reason: err instanceof Error ? err.message : err });
     }
   } else if (process.env.NODE_ENV === "production") {
     return Response.json(
@@ -116,7 +118,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: { messages: unknown[]; pageUrl?: string };
+  let body: { messages: unknown; pageUrl?: unknown };
   try {
     const parsed = await request.json();
     if (!parsed || typeof parsed !== "object") {
@@ -164,7 +166,7 @@ export async function POST(request: NextRequest) {
   }
 
   const pageContext = getPageContext(
-    typeof body.pageUrl === "string" ? body.pageUrl.slice(0, 500) : undefined
+    typeof body.pageUrl === "string" ? (body.pageUrl as string).slice(0, 500) : undefined
   );
   const systemContent = pageContext
     ? `${SYSTEM_PROMPT}\n\n## Current Page Context\n\n${pageContext}\n\nUse this context to tailor your greeting and responses. If the visitor asks about the service on this page, use the details above to give a helpful answer. Still follow all behavior rules — do NOT recommend or compare treatments.`
@@ -174,6 +176,9 @@ export async function POST(request: NextRequest) {
     { role: "system", content: systemContent },
     ...messages,
   ];
+
+  const abort = new AbortController();
+  const abortTimer = setTimeout(() => abort.abort(), UPSTREAM_TIMEOUT_MS * 3);
 
   let stream;
   try {
@@ -185,6 +190,7 @@ export async function POST(request: NextRequest) {
       messages: chatMessages,
     });
   } catch (err) {
+    clearTimeout(abortTimer);
     console.error("upstream error", err instanceof Error ? err.message : err);
     return Response.json(
       { error: "Upstream API unavailable" },
@@ -192,7 +198,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const encoder = new TextEncoder();
   const readable = new ReadableStream({
     async start(controller) {
       try {
@@ -200,8 +205,10 @@ export async function POST(request: NextRequest) {
           number,
           { id: string; name: string; args: string }
         >();
+        let assistantContent = "";
 
         for await (const chunk of stream) {
+          if (abort.signal.aborted) throw new Error("Request timeout");
           const delta = chunk.choices[0]?.delta;
 
           if (delta?.tool_calls) {
@@ -218,6 +225,7 @@ export async function POST(request: NextRequest) {
 
           const text = delta?.content;
           if (text) {
+            assistantContent += text;
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify({ text })}\n\n`)
             );
@@ -225,7 +233,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (pendingToolCalls.size > 0) {
-          const toolCalls = Array.from(pendingToolCalls.values());
+          const toolCalls = Array.from(pendingToolCalls.values()).slice(0, 1);
           const toolResultMsgs: OpenAI.ChatCompletionToolMessageParam[] = [];
 
           for (const tc of toolCalls) {
@@ -240,13 +248,13 @@ export async function POST(request: NextRequest) {
                 ) {
                   throw new Error("Invalid tool call arguments");
                 }
+                const clamp = (v: unknown, max: number) =>
+                  typeof v === "string" ? v.slice(0, max) : undefined;
                 await saveLead({
-                  name: typeof args.name === "string" ? args.name : undefined,
-                  email:
-                    typeof args.email === "string" ? args.email : undefined,
-                  phone:
-                    typeof args.phone === "string" ? args.phone : undefined,
-                  reason: args.reason,
+                  name: clamp(args.name, 200),
+                  email: clamp(args.email, 320),
+                  phone: clamp(args.phone, 30),
+                  reason: args.reason.slice(0, 1000),
                   capturedAt: new Date().toLocaleString("en-US", {
                     timeZone: "America/Chicago",
                   }),
@@ -268,6 +276,7 @@ export async function POST(request: NextRequest) {
 
           const assistantMsg: OpenAI.ChatCompletionAssistantMessageParam = {
             role: "assistant",
+            ...(assistantContent && { content: assistantContent }),
             tool_calls: toolCalls.map((tc) => ({
               id: tc.id,
               type: "function" as const,
@@ -284,6 +293,7 @@ export async function POST(request: NextRequest) {
           });
 
           for await (const chunk of followUp) {
+            if (abort.signal.aborted) throw new Error("Request timeout");
             const text = chunk.choices[0]?.delta?.content;
             if (text) {
               controller.enqueue(
@@ -306,6 +316,8 @@ export async function POST(request: NextRequest) {
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch { /* client already disconnected */ }
+      } finally {
+        clearTimeout(abortTimer);
       }
     },
   });

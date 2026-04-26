@@ -7,18 +7,20 @@ interface Message {
   content: string;
 }
 
+const MD_PATTERN = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)|\*\*([^*]+)\*\*|(https?:\/\/[^\s),]+)|(\b\d{3}[-.]?\d{3}[-.]?\d{4}\b)/g;
+
 function renderMarkdown(text: string, isUser: boolean): React.ReactNode[] {
   const linkClass = isUser
     ? "underline underline-offset-2 text-white/90 hover:text-white"
     : "underline underline-offset-2 text-teal-700 hover:text-teal-900";
 
   const parts: React.ReactNode[] = [];
-  const pattern = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)|\*\*([^*]+)\*\*|(https?:\/\/[^\s),]+)|(\b\d{3}[-.]?\d{3}[-.]?\d{4}\b)/g;
+  MD_PATTERN.lastIndex = 0;
   let lastIndex = 0;
   let match;
   let key = 0;
 
-  while ((match = pattern.exec(text)) !== null) {
+  while ((match = MD_PATTERN.exec(text)) !== null) {
     if (match.index > lastIndex) {
       parts.push(text.slice(lastIndex, match.index));
     }
