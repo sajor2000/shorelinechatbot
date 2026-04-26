@@ -31,7 +31,7 @@ const VALID_ROLES = new Set(["user", "assistant"]);
 const MAX_CONTENT_LENGTH = 4000;
 const UPSTREAM_TIMEOUT_MS = 8000;
 const CHAT_MODEL =
-  process.env.CHAT_MODEL ?? "anthropic/claude-haiku-4-5-20251001";
+  process.env.CHAT_MODEL ?? "google/gemini-3-flash-preview";
 
 const openai =
   process.env.OPENROUTER_API_KEY
