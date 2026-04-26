@@ -7,10 +7,41 @@ interface Message {
   content: string;
 }
 
+const PAGE_OPTIONS = [
+  { value: "", label: "No page context (default)" },
+  { value: "/services/cosmetic-dentistry", label: "Cosmetic Dentistry" },
+  { value: "/services/cosmetic-dentistry/dental-veneers", label: "Dental Veneers" },
+  { value: "/services/cosmetic-dentistry/dental-bonding", label: "Dental Bonding" },
+  { value: "/services/cosmetic-dentistry/teeth-whitening", label: "Teeth Whitening" },
+  { value: "/services/cosmetic-dentistry/orthodontics", label: "Orthodontics" },
+  { value: "/services/cosmetic-dentistry/full-mouth-rehabilitation", label: "Full-Mouth Rehab" },
+  { value: "/services/general-family-dentistry", label: "General & Family" },
+  { value: "/services/general-family-dentistry/dental-cleanings", label: "Dental Cleanings" },
+  { value: "/services/general-family-dentistry/emergency-dentistry", label: "Emergency Dentistry" },
+  { value: "/services/general-family-dentistry/sleep-apnea-treatment", label: "Sleep Apnea" },
+  { value: "/services/general-family-dentistry/night-guards", label: "Night Guards" },
+  { value: "/services/oral-surgery", label: "Oral Surgery" },
+  { value: "/services/oral-surgery/dental-implants", label: "Dental Implants" },
+  { value: "/services/oral-surgery/all-on-4-dental-implants", label: "All-on-4 Implants" },
+  { value: "/services/oral-surgery/implant-supported-dentures", label: "Implant-Supported Dentures" },
+  { value: "/services/oral-surgery/tooth-extractions", label: "Tooth Extractions" },
+  { value: "/services/restorative-dentistry", label: "Restorative Dentistry" },
+  { value: "/services/restorative-dentistry/dental-crowns", label: "Dental Crowns" },
+  { value: "/services/restorative-dentistry/dental-fillings", label: "Dental Fillings" },
+  { value: "/services/restorative-dentistry/root-canal-treatments", label: "Root Canal" },
+  { value: "/services/restorative-dentistry/dentures", label: "Dentures" },
+  { value: "/services/restorative-dentistry/gum-disease-treatment", label: "Gum Disease" },
+  { value: "/about/meet-our-team", label: "Meet Our Team" },
+  { value: "/patient-resources/financial-options", label: "Financial Options" },
+  { value: "/patient-resources/special-offers", label: "Special Offers" },
+  { value: "/contact-us", label: "Contact Us" },
+];
+
 export default function ChatTest() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [pageUrl, setPageUrl] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,7 +62,7 @@ export default function ChatTest() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updated }),
+        body: JSON.stringify({ messages: updated, ...(pageUrl && { pageUrl }) }),
       });
 
       if (!res.ok) {
@@ -130,16 +161,27 @@ export default function ChatTest() {
   return (
     <div className="flex flex-col h-screen max-w-2xl mx-auto">
       <header className="border-b border-gray-200 px-6 py-4">
-        <h1 className="text-lg font-semibold text-gray-900">
-          Shoreline Dental Chat — Test Console
-        </h1>
-        <p className="text-sm text-gray-500">
-          This is a local test UI. The website team will embed via the{" "}
-          <code className="bg-gray-100 px-1 rounded text-xs">
-            POST /api/chat
-          </code>{" "}
-          endpoint.
-        </p>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-lg font-semibold text-gray-900">
+              Shoreline Dental Chat — Test Console
+            </h1>
+            <p className="text-sm text-gray-500">
+              Simulate page context the widget would send from the website.
+            </p>
+          </div>
+          <select
+            value={pageUrl}
+            onChange={(e) => setPageUrl(e.target.value)}
+            className="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white text-gray-700 max-w-[200px]"
+          >
+            {PAGE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </header>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">

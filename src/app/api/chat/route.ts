@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { SYSTEM_PROMPT } from "@/lib/system-prompt";
+import { getPageContext } from "@/lib/page-context";
 import { saveLead } from "@/lib/leads";
 
 const ALLOWED_ORIGINS = [
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: { messages: unknown[] };
+  let body: { messages: unknown[]; pageUrl?: string };
   try {
     const parsed = await request.json();
     if (!parsed || typeof parsed !== "object") {
@@ -162,8 +163,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const pageContext = getPageContext(
+    typeof body.pageUrl === "string" ? body.pageUrl.slice(0, 500) : undefined
+  );
+  const systemContent = pageContext
+    ? `${SYSTEM_PROMPT}\n\n## Current Page Context\n\n${pageContext}\n\nUse this context to tailor your greeting and responses. If the visitor asks about the service on this page, use the details above to give a helpful answer. Still follow all behavior rules — do NOT recommend or compare treatments.`
+    : SYSTEM_PROMPT;
+
   const chatMessages: OpenAI.ChatCompletionMessageParam[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: systemContent },
     ...messages,
   ];
 
