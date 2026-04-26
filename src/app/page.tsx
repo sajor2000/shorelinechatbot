@@ -7,6 +7,56 @@ interface Message {
   content: string;
 }
 
+function renderMarkdown(text: string, isUser: boolean): React.ReactNode[] {
+  const linkClass = isUser
+    ? "underline text-white/90 hover:text-white"
+    : "underline text-teal-600 hover:text-teal-800";
+
+  const parts: React.ReactNode[] = [];
+  // Match: markdown links [text](url), bold **text**, bare URLs, phone numbers
+  const pattern = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)|\*\*([^*]+)\*\*|(https?:\/\/[^\s),]+)|(\b\d{3}[-.]?\d{3}[-.]?\d{4}\b)/g;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+
+    if (match[1] && match[2]) {
+      parts.push(
+        <a key={key++} href={match[2]} target="_blank" rel="noopener noreferrer" className={linkClass}>
+          {match[1]}
+        </a>
+      );
+    } else if (match[3]) {
+      parts.push(<strong key={key++}>{match[3]}</strong>);
+    } else if (match[4]) {
+      parts.push(
+        <a key={key++} href={match[4]} target="_blank" rel="noopener noreferrer" className={linkClass}>
+          {match[4]}
+        </a>
+      );
+    } else if (match[5]) {
+      const digits = match[5].replace(/\D/g, "");
+      parts.push(
+        <a key={key++} href={`tel:${digits}`} className={linkClass}>
+          {match[5]}
+        </a>
+      );
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts;
+}
+
 const PAGE_OPTIONS = [
   { value: "", label: "No page context (default)" },
   { value: "/services/cosmetic-dentistry", label: "Cosmetic Dentistry" },
@@ -221,7 +271,11 @@ export default function ChatTest() {
                   : "bg-gray-100 text-gray-900"
               }`}
             >
-              {msg.content || (
+              {msg.content ? (
+                <span className="whitespace-pre-wrap">
+                  {renderMarkdown(msg.content, msg.role === "user")}
+                </span>
+              ) : (
                 <span className="inline-block w-2 h-4 bg-gray-400 animate-pulse rounded-sm" />
               )}
             </div>
