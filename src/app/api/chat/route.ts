@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
     typeof body.pageUrl === "string" ? (body.pageUrl as string).slice(0, 500) : undefined
   );
   const systemContent = pageContext
-    ? `${SYSTEM_PROMPT}\n\n## Current Page Context\n\n${pageContext}\n\nUse this context to tailor your greeting and responses. If the visitor asks about the service on this page, use the details above to give a helpful answer. Still follow all behavior rules — do NOT recommend or compare treatments.`
+    ? `${SYSTEM_PROMPT}\n\n## Current Page Context\n\n${pageContext}\n\n## Page Context Instructions\n\n- Use the context above to understand what the visitor is interested in and tailor your greeting.\n- You may confirm that the practice offers a service mentioned in the context.\n- Do NOT explain treatment processes, list benefits, compare options, or describe clinical signs — even if asked. Redirect clinical questions to the doctors.\n- Steer toward scheduling a consultation or collecting contact information for follow-up.`
     : SYSTEM_PROMPT;
 
   const chatMessages: OpenAI.ChatCompletionMessageParam[] = [

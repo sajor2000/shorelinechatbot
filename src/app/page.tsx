@@ -47,7 +47,8 @@ function renderMarkdown(text: string, isUser: boolean): React.ReactNode[] {
 }
 
 const PAGE_OPTIONS = [
-  { value: "", label: "Homepage (no context)" },
+  { value: "/", label: "Homepage" },
+  { value: "/services", label: "All Services" },
   { value: "/services/cosmetic-dentistry", label: "Cosmetic Dentistry" },
   { value: "/services/cosmetic-dentistry/dental-veneers", label: "Dental Veneers" },
   { value: "/services/cosmetic-dentistry/dental-bonding", label: "Dental Bonding" },
@@ -59,6 +60,9 @@ const PAGE_OPTIONS = [
   { value: "/services/general-family-dentistry/emergency-dentistry", label: "Emergency Dentistry" },
   { value: "/services/general-family-dentistry/sleep-apnea-treatment", label: "Sleep Apnea" },
   { value: "/services/general-family-dentistry/night-guards", label: "Night Guards" },
+  { value: "/services/general-family-dentistry/dental-sealants", label: "Dental Sealants" },
+  { value: "/services/general-family-dentistry/fluoride-treatments", label: "Fluoride Treatments" },
+  { value: "/services/general-family-dentistry/sports-mouthguards", label: "Sports Mouth Guards" },
   { value: "/services/oral-surgery", label: "Oral Surgery" },
   { value: "/services/oral-surgery/dental-implants", label: "Dental Implants" },
   { value: "/services/oral-surgery/all-on-4-dental-implants", label: "All-on-4 Implants" },
@@ -70,10 +74,19 @@ const PAGE_OPTIONS = [
   { value: "/services/restorative-dentistry/root-canal-treatments", label: "Root Canal" },
   { value: "/services/restorative-dentistry/dentures", label: "Dentures" },
   { value: "/services/restorative-dentistry/gum-disease-treatment", label: "Gum Disease" },
+  { value: "/services/restorative-dentistry/dental-inlays-onlays", label: "Inlays & Onlays" },
+  { value: "/services/restorative-dentistry/dental-bridges", label: "Dental Bridges" },
+  { value: "/services/restorative-dentistry/scaling-root-planing", label: "Scaling & Root Planing" },
+  { value: "/about", label: "About" },
   { value: "/about/meet-our-team", label: "Meet Our Team" },
+  { value: "/about/office-tour", label: "Office Tour" },
+  { value: "/contact", label: "Contact" },
+  { value: "/contact-us", label: "Contact Us" },
+  { value: "/patient-resources", label: "Patient Resources" },
   { value: "/patient-resources/financial-options", label: "Financial Options" },
   { value: "/patient-resources/special-offers", label: "Special Offers" },
-  { value: "/contact-us", label: "Contact Us" },
+  { value: "/patient-resources/reviews", label: "Reviews" },
+  { value: "/patient-resources/gallery", label: "Gallery" },
 ];
 
 const SUGGESTIONS = [

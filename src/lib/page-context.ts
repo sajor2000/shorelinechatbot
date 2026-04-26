@@ -1,197 +1,243 @@
 const PAGE_CONTEXTS: Record<string, string> = {
+  "/": `The visitor is on the homepage.
+
+They may be exploring Shoreline Dental for the first time. They could be interested in any of the practice's services, scheduling an appointment, or learning about the team.
+
+Greet them warmly and offer to help with whatever brought them to the site.`,
+
+  "/services": `The visitor is browsing the Services page.
+
+This page lists all services offered by the practice across cosmetic, general, restorative, and oral surgery categories. The visitor may be exploring options or looking for a specific service.
+
+Offer to answer questions about any service or connect them with the team to schedule a consultation.`,
+
   "/services/cosmetic-dentistry": `The visitor is browsing the Cosmetic Dentistry page.
 
-Cosmetic dentistry at Shoreline Dental focuses on enhancing appearance and confidence. Common concerns patients have: discolored/stained teeth, chipped/cracked/broken teeth, gaps, misshapen or uneven teeth, worn teeth, teeth that appear too small or large.
+Cosmetic dentistry focuses on enhancing the appearance of teeth and smiles. Shoreline Dental offers several cosmetic services — visitors on this page are likely exploring their options or considering a consultation.
 
-Available treatments: Dental Bonding, Dental Veneers, Full-Mouth Rehabilitation, Orthodontics (ClearCorrect, Invisalign), Teeth Whitening.
-
-Every plan starts with a consultation where the doctors listen to goals, evaluate oral health, and recommend treatments aligned with the patient's vision.`,
+Offer to connect them with the team to discuss their goals or schedule a visit.`,
 
   "/services/cosmetic-dentistry/dental-veneers": `The visitor is browsing the Dental Veneers page.
 
-Veneers are thin, custom-made shells bonded to the front of teeth to improve appearance. Process: (1) Consultation — doctors discuss goals, evaluate oral health, take impressions/photos; (2) Preparation — thin layer of enamel removed, temporary veneers placed; (3) Placement — custom veneers bonded with dental adhesive, fit/color/shape verified.
+Dental veneers are thin, custom-made shells bonded to the front of teeth to improve their appearance. Shoreline Dental offers this service — visitors on this page are likely interested in scheduling a consultation or learning about next steps.
 
-Benefits: natural-looking, durable, stain-resistant, can address chips, gaps, discoloration, and misshapen teeth in one treatment.`,
+Offer to connect them with the team to discuss their goals or schedule a visit.`,
 
   "/services/cosmetic-dentistry/dental-bonding": `The visitor is browsing the Dental Bonding page.
 
-Dental bonding uses tooth-colored composite resin to repair and enhance teeth. It's versatile, affordable, and quick — often completed in under an hour. Addresses chips, cracks, discoloration, and gaps.
+Dental bonding is a cosmetic procedure that uses tooth-colored composite resin to repair or enhance the appearance of teeth. Shoreline Dental offers this service — visitors on this page are likely interested in scheduling a consultation or getting more details.
 
-Process: composite resin shade matched to natural teeth, tooth surface lightly roughened, conditioning liquid applied, resin molded and shaped, hardened with UV light, then polished. Noninvasive — preserves natural tooth structure. Patients should avoid biting hard objects (ice, pens) to extend lifespan.`,
+Offer to connect them with the team to discuss their options or schedule a visit.`,
 
   "/services/cosmetic-dentistry/teeth-whitening": `The visitor is browsing the Teeth Whitening page.
 
-Two options available:
-- In-Office Whitening: Fast, powerful, noticeable results in one visit. Concentrated whitening gel applied, advanced techniques activate bleaching.
-- Take-Home Whitening Trays: Custom-fitted trays with professional-grade gel, worn daily for several weeks. Whiten at your own pace.
+Teeth whitening is a cosmetic treatment that lightens the shade of natural teeth. Shoreline Dental offers both in-office and take-home whitening options — visitors on this page are likely interested in learning which option might work for them.
 
-Dr. Rojas and Dr. Patel provide personalized guidance for both options. Great for removing years of discoloration from coffee, tea, wine, etc.`,
+Offer to connect them with the team to discuss their options or schedule a visit.`,
 
   "/services/cosmetic-dentistry/orthodontics": `The visitor is browsing the Orthodontics page.
 
-Orthodontics corrects misaligned teeth and jaw positions. Benefits: easier to clean teeth (fewer cavities/gum disease), balanced bite prevents excessive wear, relieves TMJ stress, enhances confidence.
+Orthodontics corrects the alignment of teeth and bite. Shoreline Dental offers clear aligner therapy including ClearCorrect and Invisalign — visitors on this page are likely interested in scheduling a consultation.
 
-Treatment options at Shoreline Dental: ClearCorrect and Invisalign clear aligners. Dr. Rojas and Dr. Patel evaluate dental structure and create a plan fitting the patient's lifestyle and goals.`,
+Offer to connect them with the team to discuss their options or schedule a visit.`,
 
   "/services/cosmetic-dentistry/full-mouth-rehabilitation": `The visitor is browsing the Full-Mouth Rehabilitation page.
 
-Full-mouth rehab is a comprehensive approach for patients with significant dental issues: cracked/chipped/broken teeth, severe wear, missing teeth, advanced gum disease, persistent infections/decay.
+Full-mouth rehabilitation is a comprehensive treatment approach that addresses multiple dental concerns together for both function and appearance. Shoreline Dental offers this service — visitors on this page likely have significant dental needs and are considering a consultation.
 
-May include: Dental Crowns & Bridges, Dental Implants, Dentures, Inlays/Onlays/Fillings, Veneers, Gum Disease Treatment, Root Canal Therapy. Each step works together for both functional and beautiful results. Starts with a comprehensive examination of teeth, gums, and jaw.`,
+Offer to connect them with the team to discuss their situation or schedule a comprehensive evaluation.`,
 
   "/services/general-family-dentistry": `The visitor is browsing the General & Family Dentistry page.
 
-Services for patients of all ages, from children to seniors. Focus on preventive care: regular checkups and cleanings to prevent cavities and gum disease. Early detection avoids more complex and costly treatments.
+General and family dentistry covers preventive and routine dental care for patients of all ages. Shoreline Dental provides a full range of general services — visitors on this page are likely looking to schedule a cleaning, checkup, or learn about available care.
 
-Services: Dental Cleanings, Dental Sealants, Emergency Dentistry, Fluoride Treatments, Night Guards, Sleep Apnea Treatment, Sports Mouth Guards. Also offer cosmetic and restorative treatments. Recommend visits every six months.`,
+Offer to connect them with the team to schedule an appointment or answer questions.`,
 
   "/services/general-family-dentistry/dental-cleanings": `The visitor is browsing the Dental Cleanings page.
 
-What's included: plaque and tartar removal, deep cleaning between teeth, polishing to remove surface stains, professional flossing, screening for cavities/gum disease/oral cancer, fluoride treatment, digital X-rays.
+A dental cleaning is a professional preventive service that helps maintain oral health. Shoreline Dental offers routine cleanings — visitors on this page are likely ready to schedule their next appointment.
 
-Recommended every six months. Professional cleanings support overall health — gum disease and untreated infections increase risk for heart disease and diabetes.`,
+Offer to help them book a cleaning or connect them with the team.`,
 
   "/services/general-family-dentistry/emergency-dentistry": `The visitor is browsing the Emergency Dentistry page.
 
-Dental emergencies: sudden injury, unexpected dental issue, severe pain, bleeding. Patients should call 312-266-9487 immediately for guidance.
+Emergency dentistry provides urgent dental care when unexpected issues arise. Shoreline Dental prioritizes emergency patients — visitors on this page may need immediate help.
 
-Non-urgent concerns (mild sensitivity, sore gums, minor discomfort) are better addressed during regular hours, but if symptoms worsen, reach out. Dr. Rojas and Dr. Patel prioritize swift, effective care.`,
+If they describe an emergency, express concern and encourage them to call the office right away.`,
 
   "/services/general-family-dentistry/sleep-apnea-treatment": `The visitor is browsing the Sleep Apnea Treatment page.
 
-For mild to moderate obstructive sleep apnea, oral appliance therapy is available. Custom-fitted device repositions the jaw to keep the airway open during sleep. Compact, quiet, easy to use — an alternative to bulky CPAP machines.
+Oral appliance therapy is a dental approach to managing mild to moderate obstructive sleep apnea. Shoreline Dental offers this service — visitors on this page are likely interested in learning more or scheduling a consultation.
 
-Dr. Rojas has additional training in oral sleep appliances. A sleep apnea diagnosis from a physician is required first, then the dental team coordinates care.`,
+Offer to connect them with the team to discuss their options or schedule a visit.`,
 
   "/services/general-family-dentistry/night-guards": `The visitor is browsing the Night Guards page.
 
-Custom night guards protect teeth from bruxism (teeth grinding during sleep). Symptoms: sore jaw, sensitive teeth, headaches/migraines. Untreated bruxism causes tooth wear, chipping, cracking, TMJ disorders.
+A night guard is a custom-fitted oral appliance worn during sleep to protect teeth from grinding and clenching. Shoreline Dental offers custom night guards — visitors on this page are likely interested in getting one or learning more.
 
-Process: precise impressions taken, custom guard fabricated, detailed care instructions provided. Fits securely and comfortably.`,
+Offer to connect them with the team to discuss their needs or schedule a visit.`,
 
   "/services/general-family-dentistry/dental-sealants": `The visitor is browsing the Dental Sealants page.
 
-Dental sealants are thin protective coatings applied to the chewing surfaces of back teeth (molars) to prevent cavities. Quick, painless, and especially beneficial for children. Part of preventive care.`,
+Dental sealants are thin protective coatings applied to the chewing surfaces of back teeth to help prevent cavities. Shoreline Dental offers this service as part of preventive care — visitors on this page are likely interested in scheduling an appointment.
+
+Offer to connect them with the team to schedule a visit.`,
 
   "/services/general-family-dentistry/fluoride-treatments": `The visitor is browsing the Fluoride Treatments page.
 
-Professional fluoride treatments strengthen enamel and help prevent tooth decay. Quick application during regular cleaning visits. Beneficial for patients of all ages, especially those prone to cavities.`,
+Fluoride treatments are a quick preventive service applied during regular dental visits to help protect teeth from decay. Shoreline Dental offers this service — visitors on this page are likely interested in scheduling an appointment.
+
+Offer to connect them with the team to schedule a visit.`,
 
   "/services/general-family-dentistry/sports-mouthguards": `The visitor is browsing the Sports Mouth Guards page.
 
-Custom-fitted sports mouth guards protect teeth during athletic activities. Much more effective than store-bought options. Precise fit for comfort and maximum protection.`,
+Custom sports mouth guards are professionally fitted oral appliances that protect teeth during athletic activities. Shoreline Dental offers custom-fitted guards — visitors on this page are likely interested in getting one made.
+
+Offer to connect them with the team to schedule a fitting.`,
 
   "/services/oral-surgery": `The visitor is browsing the Oral Surgery page.
 
-Oral surgery addresses complex issues beyond routine care — gums, jaw, and supporting structures. Reasons: tooth extractions, wisdom teeth removal, bone grafting, gum surgery.
+Oral surgery encompasses dental procedures that address the teeth, gums, jaw, and supporting structures beyond routine care. Shoreline Dental offers several oral surgery services — visitors on this page are likely exploring their options or considering a consultation.
 
-Services: All-on-4 Dental Implants, Dental Implants, Implant-Supported Dentures, Tooth Extractions. Dr. Rojas and Dr. Patel prioritize conservative treatment first. If specialized care is needed, they collaborate with trusted oral surgeons.`,
+Offer to connect them with the team to discuss their needs or schedule a visit.`,
 
   "/services/oral-surgery/dental-implants": `The visitor is browsing the Dental Implants page.
 
-Dental implants replace missing teeth with a titanium post surgically placed in the jawbone, topped with a custom crown/bridge/denture. Mimics natural tooth structure (root + crown).
+A dental implant is a permanent tooth replacement that uses a small post placed in the jawbone to support a custom crown, bridge, or denture. Shoreline Dental offers dental implants — visitors on this page are likely interested in scheduling a consultation to discuss their situation.
 
-Good candidates: one or more missing teeth, sufficient jawbone density, good oral health, no healing-interfering conditions. Bone grafting may be needed if jawbone has weakened.
-
-Process: (1) Titanium post inserted, osseointegration over months; (2) Abutment attached; (3) Custom restoration placed. Implants prevent bone loss and maintain facial structure. Can last decades with proper care.`,
+Offer to connect them with the team to discuss their options or schedule a visit.`,
 
   "/services/oral-surgery/all-on-4-dental-implants": `The visitor is browsing the All-on-4 Dental Implants page.
 
-All-on-4 uses just four strategically placed implants to anchor a full-arch denture. Benefits: fewer implants than traditional full-arch restoration, less invasive, more affordable. Denture can often be secured same day.
+All-on-4 is a full-arch tooth replacement method that uses four strategically placed implants to support a complete set of teeth. Shoreline Dental offers this service — visitors on this page are likely interested in scheduling a consultation.
 
-Greater stability than traditional dentures, preserves jawbone density. Existing dentures may be retrofitted. Often eliminates need for bone grafts.`,
+Offer to connect them with the team to discuss their options or schedule a visit.`,
 
   "/services/oral-surgery/implant-supported-dentures": `The visitor is browsing the Implant-Supported Dentures page.
 
-Implant-supported dentures attach to dental implants fused with the jawbone — no adhesives or suction needed. Prevents slipping and discomfort. Requires 4-6 implants typically.
+Implant-supported dentures are dentures that attach to dental implants placed in the jawbone for added stability. Shoreline Dental offers this service — visitors on this page are likely interested in scheduling a consultation.
 
-Requirements: healthy gums, strong jawbone, good oral hygiene. Process: implants placed surgically, healing period for osseointegration, then custom denture attached. Far more stable than traditional dentures.`,
+Offer to connect them with the team to discuss their options or schedule a visit.`,
 
   "/services/oral-surgery/tooth-extractions": `The visitor is browsing the Tooth Extractions page.
 
-Extractions for teeth damaged beyond repair or threatening oral health. Types: Simple extraction (visible tooth, minimal recovery) and Surgical extraction (broken/impacted teeth, removed in sections).
+A tooth extraction is the removal of a tooth that is damaged, decayed, or otherwise needs to be taken out. Shoreline Dental offers both simple and surgical extractions — visitors on this page are likely interested in scheduling a consultation or understanding next steps.
 
-Aftercare: avoid vigorous rinsing, smoking, straws for first few days. Soft foods recommended. Swelling/mild discomfort normal for a few days. Replacement options include implants, bridges, and dentures.`,
+Offer to connect them with the team to discuss their situation or schedule a visit.`,
 
   "/services/restorative-dentistry": `The visitor is browsing the Restorative Dentistry page.
 
-Restorative dentistry rebuilds and repairs damaged, decayed, or missing teeth. Services: Dental Bridges, Dental Crowns, Dental Fillings, Dental Inlays & Onlays, Dentures, Gum Disease Treatment, Root Canal Treatments, Scaling & Root Planing.
+Restorative dentistry focuses on repairing and rebuilding damaged, decayed, or missing teeth. Shoreline Dental offers a full range of restorative services — visitors on this page are likely exploring their options or considering a consultation.
 
-Materials blend with natural teeth for natural-looking results. Treatment plans designed for both aesthetics and functionality.`,
+Offer to connect them with the team to discuss their needs or schedule a visit.`,
 
   "/services/restorative-dentistry/dental-crowns": `The visitor is browsing the Dental Crowns page.
 
-Crowns restore teeth too damaged for fillings. Needed for: decay/large filling, post-root canal protection, fractures, implant completion, misshapen/discolored teeth.
+A dental crown is a custom-fitted cap placed over a damaged tooth to restore its shape, strength, and appearance. Shoreline Dental offers dental crowns — visitors on this page are likely interested in scheduling a consultation.
 
-Process: Two visits. (1) Decay removed, tooth shaped, impression taken, temporary crown placed; (2) Permanent crown fitted and bonded. Custom-matched to natural teeth in size, shape, and color. Care: brush/floss normally, avoid chewing hard objects.`,
+Offer to connect them with the team to discuss their needs or schedule a visit.`,
 
   "/services/restorative-dentistry/dental-fillings": `The visitor is browsing the Dental Fillings page.
 
-Composite (tooth-colored) fillings for minor to moderate tooth damage from decay, fractures, or chipping. Blend seamlessly with natural teeth.
+A dental filling restores a tooth that has been affected by decay or minor damage using tooth-colored composite material. Shoreline Dental offers this service — visitors on this page are likely interested in scheduling an appointment.
 
-Process: One visit. Examine tooth, remove decay, place and shape composite resin, cure with light, polish. Benefits: restore structure, prevent further decay, aesthetic appeal, strong bond with natural tooth. Last many years with proper care.`,
+Offer to connect them with the team to schedule a visit.`,
 
   "/services/restorative-dentistry/root-canal-treatments": `The visitor is browsing the Root Canal Treatments page.
 
-Root canal saves natural teeth from severe damage or infection. Signs: severe pain, sensitivity, swelling, discoloration of tooth.
+Root canal therapy is a procedure that treats infection or damage inside a tooth to save the natural tooth from extraction. Shoreline Dental offers this service — visitors on this page may be experiencing discomfort and are likely interested in scheduling a consultation.
 
-Process: area numbed, infected pulp removed, interior cleaned/disinfected, filled and sealed, usually followed by a dental crown. Eliminates infection and preserves the natural tooth.`,
+Offer to connect them with the team to discuss their situation or schedule a visit.`,
 
   "/services/restorative-dentistry/dentures": `The visitor is browsing the Dentures page.
 
-Dentures replace multiple missing teeth — partial (some teeth) or full (entire arch). Restore function, aesthetics, and facial shape. Types available: conventional, immediate, and implant-supported.
+Dentures are removable replacements for missing teeth that restore function and appearance. Shoreline Dental offers several denture options — visitors on this page are likely interested in scheduling a consultation to discuss what might work for them.
 
-Care: clean daily with soft brush and nonabrasive cleaner, brush gums/tongue/palate each morning, regular dental visits for condition checks.`,
+Offer to connect them with the team to discuss their options or schedule a visit.`,
 
   "/services/restorative-dentistry/gum-disease-treatment": `The visitor is browsing the Gum Disease Treatment page.
 
-Gum (periodontal) disease is progressive — from plaque buildup to infection, inflammation, and bone loss. Symptoms: red/swollen gums, bleeding when brushing, bad breath, receding gums, loose teeth.
+Gum disease treatment addresses infections and inflammation of the gums and supporting structures of the teeth. Shoreline Dental offers this service — visitors on this page are likely concerned about their gum health and interested in scheduling an evaluation.
 
-Treatment available at Shoreline Dental. Prevention: brushing twice daily, flossing, antimicrobial mouthwash, regular professional cleanings. Early treatment is critical.`,
+Offer to connect them with the team to discuss their concerns or schedule a visit.`,
 
   "/services/restorative-dentistry/dental-inlays-onlays": `The visitor is browsing the Dental Inlays & Onlays page.
 
-Inlays and onlays are indirect restorations for moderate tooth damage — more than a filling but less than a crown. Custom-made to fit precisely. Preserve more natural tooth structure than crowns.`,
+Inlays and onlays are custom-made restorations used to repair moderate tooth damage. Shoreline Dental offers this service — visitors on this page are likely interested in scheduling a consultation.
+
+Offer to connect them with the team to discuss their options or schedule a visit.`,
 
   "/services/restorative-dentistry/dental-bridges": `The visitor is browsing the Dental Bridges page.
 
-Dental bridges replace one or more missing teeth by anchoring to adjacent natural teeth or implants. Restore ability to chew, speak, and maintain facial structure. Custom-matched to natural teeth.`,
+A dental bridge is a fixed restoration that replaces one or more missing teeth by anchoring to adjacent teeth or implants. Shoreline Dental offers this service — visitors on this page are likely interested in scheduling a consultation.
+
+Offer to connect them with the team to discuss their options or schedule a visit.`,
 
   "/services/restorative-dentistry/scaling-root-planing": `The visitor is browsing the Scaling & Root Planing page.
 
-Deep cleaning procedure for gum disease. Scaling removes plaque and tartar below the gumline. Root planing smooths tooth roots so gums can reattach. Often the first line of treatment for periodontal disease.`,
+Scaling and root planing is a deep cleaning procedure used to treat gum disease. Shoreline Dental offers this service — visitors on this page are likely interested in scheduling an appointment or learning about next steps.
 
-  "/about": `The visitor is browsing the About page. They may be interested in learning about the practice, its values, or the team.`,
+Offer to connect them with the team to discuss their needs or schedule a visit.`,
+
+  "/about": `The visitor is browsing the About page.
+
+They are likely interested in learning about Shoreline Dental, its values, or the team. Visitors on this page may be evaluating the practice before booking.
+
+Offer to answer any questions or connect them with the team to schedule a visit.`,
 
   "/about/meet-our-team": `The visitor is browsing the Meet Our Team page.
 
-Dr. Mollie Rojas — General and cosmetic dentistry, clear aligner therapy (Invisalign), oral sleep appliances for sleep apnea. Published researcher on oral cancer. Emphasizes patient education and comprehensive treatment plans. Caring and gentle.
+They are interested in learning about the doctors and staff at Shoreline Dental. Visitors on this page are likely evaluating the practice or looking for a provider they feel comfortable with.
 
-Dr. Sonal Patel, DMD — Comprehensive treatment planning, patient comfort and confidence. Years of experience, customized care.
+Offer to answer questions about the team or connect them with the office to schedule a visit.`,
 
-Kathryn — Dental Hygienist, graduated from Parkland College (4.0 GPA), passionate about healthy smiles and patient comfort.
+  "/about/office-tour": `The visitor is browsing the Office Tour page.
 
-Anel — Business Administrator.`,
+They are interested in seeing the practice space and getting a sense of the environment. Visitors on this page may be considering their first visit.
 
-  "/about/office-tour": `The visitor is browsing the Office Tour page. They're interested in seeing the practice space. The office is at 737 North Michigan Avenue, Suite 910 — on the Magnificent Mile in Chicago.`,
+Offer to answer questions about the office or help them schedule an appointment.`,
 
-  "/contact": `The visitor is on the Contact page. They are likely ready to reach out. Phone: 312-266-9487. Address: 737 North Michigan Avenue, Suite 910, Chicago, IL 60611. Entrance off Chicago Avenue at the corner of Chicago & Michigan.`,
+  "/contact": `The visitor is on the Contact page.
 
-  "/contact-us": `The visitor is on the Contact Us page. They are likely ready to reach out. Phone: 312-266-9487. Address: 737 North Michigan Avenue, Suite 910, Chicago, IL 60611. Entrance off Chicago Avenue at the corner of Chicago & Michigan.`,
+They are likely ready to reach out to the practice. This visitor has high intent — they may want to schedule an appointment, ask a question, or get directions.
 
-  "/patient-resources/financial-options": `The visitor is browsing the Financial Options page. They care about cost and payment.
+Offer to help them with whatever they need or collect their information for the team to follow up.`,
 
-Options: $0 cleanings for most insured patients. New Patient Special: $99 (cleaning, X-rays, exam, fluoride) for uninsured patients. Cherry Financing: spread cost over months to a year. Dental Assistance Savings Plan (DASP): in-house discount plan for uninsured — 15% off orthodontics, periodontal treatment, and whitening. Online payments via CardPointe.
+  "/contact-us": `The visitor is on the Contact Us page.
 
-DASP rules: not insurance, cannot combine with other plans, non-refundable, payment due day of service. $50 broken appointment fee without 24-hour notice.`,
+They are likely ready to reach out to the practice. This visitor has high intent — they may want to schedule an appointment, ask a question, or get directions.
 
-  "/patient-resources/special-offers": `The visitor is browsing the Special Offers page. They're looking for deals.
+Offer to help them with whatever they need or collect their information for the team to follow up.`,
 
-New Patient Special: $99 for uninsured patients — includes dental cleaning, X-rays, exam with Dr. Rojas or Dr. Patel, and fluoride treatment. Not valid for insured patients. $0 cleanings available for most insured patients — call 312-266-9487 for details.`,
+  "/patient-resources": `The visitor is browsing the Patient Resources page.
 
-  "/patient-resources/reviews": `The visitor is browsing the Reviews page. They're evaluating the practice based on other patients' experiences. The practice prides itself on personalized, high-end care where every patient is treated as an individual.`,
+This page provides access to financial options, special offers, patient reviews, and the smile gallery. The visitor is likely looking for practical information about cost, payment, or the patient experience.
 
-  "/patient-resources/gallery": `The visitor is browsing the Gallery page. They're looking at before/after photos and results. The practice offers cosmetic and restorative work including veneers, bonding, whitening, implants, and full-mouth rehabilitation.`,
+Offer to help them find what they need or connect them with the front desk.`,
+
+  "/patient-resources/financial-options": `The visitor is browsing the Financial Options page.
+
+They are interested in cost, payment plans, or insurance. Shoreline Dental offers several financial options including a New Patient Special ($99 for uninsured patients), Cherry Financing, and the Dental Assistance Savings Plan (DASP) for uninsured patients.
+
+Visitors on this page likely have questions about cost — offer to connect them with the front desk to discuss their specific situation or collect their information for follow-up.`,
+
+  "/patient-resources/special-offers": `The visitor is browsing the Special Offers page.
+
+They are looking for deals or promotions. Shoreline Dental offers a New Patient Special ($99 for uninsured patients, includes cleaning, X-rays, exam, and fluoride) and $0 cleanings for most insured patients.
+
+Offer to help them take advantage of these offers or collect their information to get started.`,
+
+  "/patient-resources/reviews": `The visitor is browsing the Reviews page.
+
+They are evaluating the practice based on other patients' experiences. This visitor may be close to booking but wants social proof first.
+
+Offer to answer any questions or help them schedule an appointment.`,
+
+  "/patient-resources/gallery": `The visitor is browsing the Gallery page.
+
+They are looking at before-and-after photos and results. This visitor is likely interested in cosmetic or restorative work and is evaluating what the practice can do.
+
+Offer to connect them with the team to discuss their goals or schedule a consultation.`,
 };
 
 export function getPageContext(pageUrl: string | undefined | null): string | null {
