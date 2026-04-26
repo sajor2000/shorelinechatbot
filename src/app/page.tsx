@@ -9,6 +9,15 @@ interface Message {
 
 const MD_PATTERN = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)|\*\*([^*]+)\*\*|(https?:\/\/[^\s),]+)|(\b\d{3}[-.]?\d{3}[-.]?\d{4}\b)/g;
 
+function getTimeGreeting(): string {
+  const h = parseInt(
+    new Date().toLocaleString("en-US", { timeZone: "America/Chicago", hour: "numeric", hour12: false })
+  );
+  if (h < 12) return "Good morning! How can we help?";
+  if (h < 17) return "Good afternoon! How can we help?";
+  return "Good evening! How can we help?";
+}
+
 function renderMarkdown(text: string, isUser: boolean): React.ReactNode[] {
   const linkClass = isUser
     ? "underline underline-offset-2 text-white/90 hover:text-white"
@@ -89,13 +98,126 @@ const PAGE_OPTIONS = [
   { value: "/patient-resources/gallery", label: "Gallery" },
 ];
 
-const SUGGESTIONS = [
+const DEFAULT_SUGGESTIONS = [
   "What are your hours?",
   "How do I book an appointment?",
   "Do you take my insurance?",
-  "Tell me about teeth whitening",
+  "What's the new patient special?",
   "I have a dental emergency",
 ];
+
+const PAGE_SUGGESTIONS: Record<string, string[]> = {
+  "/": DEFAULT_SUGGESTIONS,
+  "/services": [
+    "What services do you offer?",
+    "How do I book an appointment?",
+    "Do you take my insurance?",
+    "What's the new patient special?",
+  ],
+  "/services/cosmetic-dentistry": [
+    "What cosmetic services do you offer?",
+    "Can I schedule a consultation?",
+    "Do you take my insurance?",
+    "What's the new patient special?",
+  ],
+  "/services/cosmetic-dentistry/dental-veneers": [
+    "How do I get started with veneers?",
+    "Can I schedule a consultation?",
+    "Do you take my insurance for this?",
+    "What's the new patient special?",
+  ],
+  "/services/cosmetic-dentistry/dental-bonding": [
+    "How do I get started with bonding?",
+    "Can I schedule a consultation?",
+    "Do you take my insurance?",
+    "What's the new patient special?",
+  ],
+  "/services/cosmetic-dentistry/teeth-whitening": [
+    "How do I book a whitening appointment?",
+    "What whitening options do you have?",
+    "Do you take my insurance?",
+    "What does it cost?",
+  ],
+  "/services/cosmetic-dentistry/orthodontics": [
+    "Do you offer Invisalign?",
+    "How do I get started with orthodontics?",
+    "Do you take my insurance for this?",
+    "Can I schedule a consultation?",
+  ],
+  "/services/general-family-dentistry": [
+    "How do I book a cleaning?",
+    "What are your hours?",
+    "Do you take my insurance?",
+    "What's the new patient special?",
+  ],
+  "/services/general-family-dentistry/dental-cleanings": [
+    "How do I book a cleaning?",
+    "Are cleanings really $0 with insurance?",
+    "Do you take my insurance?",
+    "What's the new patient special?",
+  ],
+  "/services/general-family-dentistry/emergency-dentistry": [
+    "I have a dental emergency",
+    "Are you open right now?",
+    "What's your phone number?",
+    "How quickly can I be seen?",
+  ],
+  "/services/oral-surgery": [
+    "Tell me about dental implants",
+    "Can I schedule a consultation?",
+    "Do you take my insurance?",
+    "What's the new patient special?",
+  ],
+  "/services/oral-surgery/dental-implants": [
+    "How do I get started with implants?",
+    "Can I schedule a consultation?",
+    "Do you take my insurance for implants?",
+    "What financing options are available?",
+  ],
+  "/services/restorative-dentistry": [
+    "What restorative options do you have?",
+    "Can I schedule a consultation?",
+    "Do you take my insurance?",
+    "What's the new patient special?",
+  ],
+  "/contact": [
+    "I'd like to schedule an appointment",
+    "What are your hours?",
+    "Where are you located?",
+    "Is there parking nearby?",
+  ],
+  "/contact-us": [
+    "I'd like to schedule an appointment",
+    "What are your hours?",
+    "Where are you located?",
+    "Is there parking nearby?",
+  ],
+  "/patient-resources/financial-options": [
+    "What's the new patient special?",
+    "Do you offer payment plans?",
+    "Do you take my insurance?",
+    "Tell me about Cherry Financing",
+  ],
+  "/patient-resources/special-offers": [
+    "What's the new patient special?",
+    "Are cleanings really $0 with insurance?",
+    "Do you offer payment plans?",
+    "How do I book an appointment?",
+  ],
+  "/about/meet-our-team": [
+    "Tell me about Dr. Rojas",
+    "Tell me about Dr. Patel",
+    "How do I book an appointment?",
+    "Do you take my insurance?",
+  ],
+};
+
+function getSuggestions(pageUrl: string): string[] {
+  if (PAGE_SUGGESTIONS[pageUrl]) return PAGE_SUGGESTIONS[pageUrl];
+  const parent = pageUrl.split("/").slice(0, -1).join("/");
+  if (parent && PAGE_SUGGESTIONS[parent]) return PAGE_SUGGESTIONS[parent];
+  return DEFAULT_SUGGESTIONS;
+}
 
 export default function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -103,8 +225,84 @@ export default function ChatWidget() {
   const [streaming, setStreaming] = useState(false);
   const [pageUrl, setPageUrl] = useState("");
   const [showTestBar, setShowTestBar] = useState(true);
+  const [followUpSuggestions, setFollowUpSuggestions] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const greetingFired = useRef(false);
+  const pageUrlRef = useRef(pageUrl);
+
+  useEffect(() => {
+    pageUrlRef.current = pageUrl;
+  }, [pageUrl]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const page = params.get("page");
+    if (page) {
+      setPageUrl(page);
+      setShowTestBar(false);
+      pageUrlRef.current = page;
+    }
+
+    if (greetingFired.current) return;
+    greetingFired.current = true;
+
+    const timer = setTimeout(async () => {
+      setStreaming(true);
+      setMessages([{ role: "assistant", content: "" }]);
+      try {
+        const currentPage = pageUrlRef.current;
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [{ role: "user", content: "[GREETING]" }],
+            ...(currentPage && { pageUrl: currentPage }),
+          }),
+        });
+        if (!res.ok) {
+          setMessages([{ role: "assistant", content: "Hi there! Welcome to Shoreline Dental. How can I help you today?" }]);
+          return;
+        }
+        const reader = res.body?.getReader();
+        if (!reader) return;
+        const decoder = new TextDecoder();
+        let text = "";
+        let buffer = "";
+        outer: while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const payload = line.slice(6);
+            if (payload === "[DONE]") break outer;
+            try {
+              const data = JSON.parse(payload);
+              if (data.text) {
+                text += data.text;
+                setMessages([{ role: "assistant", content: text }]);
+              }
+              if (data.suggestions) {
+                setFollowUpSuggestions(data.suggestions.slice(0, 2));
+              }
+            } catch { /* partial chunk */ }
+          }
+        }
+        reader.releaseLock();
+        if (!text) {
+          setMessages([{ role: "assistant", content: "Hi there! Welcome to Shoreline Dental. How can I help you today?" }]);
+        }
+      } catch {
+        setMessages([{ role: "assistant", content: "Hi there! Welcome to Shoreline Dental. How can I help you today?" }]);
+      } finally {
+        setStreaming(false);
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -114,6 +312,7 @@ export default function ChatWidget() {
     const content = (text ?? input).trim();
     if (!content || streaming) return;
 
+    setFollowUpSuggestions([]);
     const userMsg: Message = { role: "user", content };
     const updated = [...messages, userMsg];
     setMessages(updated);
@@ -173,6 +372,9 @@ export default function ChatWidget() {
                 next[next.length - 1] = { role: "assistant", content: assistantText };
                 return next;
               });
+            }
+            if (data.suggestions) {
+              setFollowUpSuggestions(data.suggestions.slice(0, 2));
             }
           } catch { /* partial chunk */ }
         }
@@ -250,41 +452,13 @@ export default function ChatWidget() {
                   </span>
                   Typing
                 </span>
-              ) : "Hi! How can we help you today?"}
+              ) : getTimeGreeting()}
             </p>
           </div>
         </header>
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ scrollBehavior: "smooth" }}>
-
-          {messages.length === 0 && (
-            <div className="flex flex-col items-center pt-8 pb-4 animate-fadeIn">
-              <div className="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center mb-4">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-teal-600">
-                  <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z" fill="currentColor"/>
-                  <path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z" fill="currentColor"/>
-                </svg>
-              </div>
-              <p className="text-slate-800 font-medium text-[15px] mb-1">
-                Welcome to Shoreline Dental
-              </p>
-              <p className="text-slate-500 text-xs text-center leading-relaxed max-w-[280px] mb-6">
-                Ask us about appointments, services, insurance, or anything else. We&apos;re here to help!
-              </p>
-              <div className="w-full space-y-2">
-                {SUGGESTIONS.map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => sendMessage(q)}
-                    className="w-full text-left text-sm text-slate-700 bg-slate-50 hover:bg-teal-50 hover:text-teal-800 border border-slate-200 hover:border-teal-200 rounded-xl px-4 py-2.5 transition-all duration-150 active:scale-[0.98]"
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {messages.map((msg, i) => (
             <div
@@ -319,6 +493,34 @@ export default function ChatWidget() {
               </div>
             </div>
           ))}
+
+          {messages.length === 1 && messages[0].role === "assistant" && messages[0].content && !streaming && (
+            <div className="w-full space-y-2 animate-fadeIn">
+              {getSuggestions(pageUrl).map((q) => (
+                <button
+                  key={q}
+                  onClick={() => sendMessage(q)}
+                  className="w-full text-left text-sm text-slate-700 bg-slate-50 hover:bg-teal-50 hover:text-teal-800 border border-slate-200 hover:border-teal-200 rounded-xl px-4 py-2.5 transition-all duration-150 active:scale-[0.98]"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {followUpSuggestions.length > 0 && !streaming && (
+            <div className="flex flex-wrap gap-2 ml-9 animate-fadeIn">
+              {followUpSuggestions.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => sendMessage(s)}
+                  className="text-xs text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-full px-3 py-1.5 transition-all duration-150 active:scale-[0.98]"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Input */}
@@ -348,7 +550,7 @@ export default function ChatWidget() {
             </button>
           </form>
           <p className="text-[10px] text-slate-400 text-center mt-2">
-            Powered by Shoreline Dental Chicago
+            Shoreline Dental Chicago &middot; 737 N Michigan Ave
           </p>
         </div>
       </div>
