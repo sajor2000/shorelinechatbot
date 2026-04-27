@@ -243,6 +243,7 @@ export default function ChatWidget() {
       pageUrlRef.current = page;
     }
 
+    const greetingAbort = new AbortController();
     const timer = setTimeout(async () => {
       setStreaming(true);
       setMessages([{ role: "assistant", content: "" }]);
@@ -256,13 +257,17 @@ export default function ChatWidget() {
             messages: [{ role: "user", content: "[GREETING]" }],
             ...(currentPage && { pageUrl: currentPage }),
           }),
+          signal: greetingAbort.signal,
         });
         if (!res.ok) {
           setMessages([{ role: "user", content: "[GREETING]" }, { role: "assistant", content: fallback }]);
           return;
         }
         const reader = res.body?.getReader();
-        if (!reader) return;
+        if (!reader) {
+          setMessages([{ role: "user", content: "[GREETING]" }, { role: "assistant", content: fallback }]);
+          return;
+        }
         try {
           const decoder = new TextDecoder();
           let text = "";
@@ -283,8 +288,8 @@ export default function ChatWidget() {
                   text += data.text;
                   setMessages([{ role: "user", content: "[GREETING]" }, { role: "assistant", content: text }]);
                 }
-                if (data.suggestions) {
-                  setFollowUpSuggestions(data.suggestions.filter((s: unknown): s is string => typeof s === "string").map((s: string) => s.slice(0, 80)).slice(0, 2));
+                if (Array.isArray(data.suggestions)) {
+                  setFollowUpSuggestions(data.suggestions.filter((s: unknown): s is string => typeof s === "string" && s !== "[GREETING]").map((s: string) => s.slice(0, 80)).slice(0, 2));
                 }
               } catch { /* partial chunk */ }
             }
@@ -301,7 +306,7 @@ export default function ChatWidget() {
         setStreaming(false);
       }
     }, 100);
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); greetingAbort.abort(); };
   }, []);
 
   useEffect(() => {
@@ -323,7 +328,7 @@ export default function ChatWidget() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updated, ...(pageUrl && { pageUrl }) }),
+        body: JSON.stringify({ messages: updated.filter(m => !(m.role === "user" && m.content === "[GREETING]")), ...(pageUrl && { pageUrl }) }),
       });
 
       if (!res.ok) {

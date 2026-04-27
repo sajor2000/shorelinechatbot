@@ -279,9 +279,16 @@ export async function POST(request: NextRequest) {
               try {
                 const args = JSON.parse(tc.args);
                 if (Array.isArray(args.suggestions)) {
-                  controller.enqueue(
-                    encoder.encode(`data: ${JSON.stringify({ suggestions: args.suggestions.slice(0, 2) })}\n\n`)
-                  );
+                  const cleaned = args.suggestions
+                    .filter((s: unknown): s is string => typeof s === "string")
+                    .map((s: string) => sanitizeText(s).trim())
+                    .filter((s: string) => s.length > 0)
+                    .slice(0, 2);
+                  if (cleaned.length > 0) {
+                    controller.enqueue(
+                      encoder.encode(`data: ${JSON.stringify({ suggestions: cleaned })}\n\n`)
+                    );
+                  }
                 }
               } catch { /* ignore malformed */ }
             }
