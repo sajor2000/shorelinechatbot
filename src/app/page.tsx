@@ -7,6 +7,7 @@ interface Message {
   content: string;
 }
 
+const GREETING_SENTINEL = "[GREETING]";
 const MD_PATTERN = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)|\*\*([^*]+)\*\*|(https?:\/\/[^\s),]+)|(\b\d{3}[-.]?\d{3}[-.]?\d{4}\b)/g;
 
 function getTimeGreeting(): string {
@@ -229,6 +230,7 @@ export default function ChatWidget() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const pageUrlRef = useRef(pageUrl);
+  const sendAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     pageUrlRef.current = pageUrl;
@@ -254,18 +256,18 @@ export default function ChatWidget() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            messages: [{ role: "user", content: "[GREETING]" }],
+            messages: [{ role: "user", content: GREETING_SENTINEL }],
             ...(currentPage && { pageUrl: currentPage }),
           }),
           signal: greetingAbort.signal,
         });
         if (!res.ok) {
-          setMessages([{ role: "user", content: "[GREETING]" }, { role: "assistant", content: fallback }]);
+          setMessages([{ role: "user", content: GREETING_SENTINEL }, { role: "assistant", content: fallback }]);
           return;
         }
         const reader = res.body?.getReader();
         if (!reader) {
-          setMessages([{ role: "user", content: "[GREETING]" }, { role: "assistant", content: fallback }]);
+          setMessages([{ role: "user", content: GREETING_SENTINEL }, { role: "assistant", content: fallback }]);
           return;
         }
         try {
@@ -286,27 +288,31 @@ export default function ChatWidget() {
                 const data = JSON.parse(payload);
                 if (data.text) {
                   text += data.text;
-                  setMessages([{ role: "user", content: "[GREETING]" }, { role: "assistant", content: text }]);
+                  setMessages([{ role: "user", content: GREETING_SENTINEL }, { role: "assistant", content: text }]);
                 }
                 if (Array.isArray(data.suggestions)) {
-                  setFollowUpSuggestions(data.suggestions.filter((s: unknown): s is string => typeof s === "string" && s !== "[GREETING]").map((s: string) => s.slice(0, 80)).slice(0, 2));
+                  setFollowUpSuggestions(data.suggestions.filter((s: unknown): s is string => typeof s === "string" && s !== GREETING_SENTINEL).map((s: string) => s.slice(0, 80)).slice(0, 2));
                 }
               } catch { /* partial chunk */ }
             }
           }
           if (!text) {
-            setMessages([{ role: "user", content: "[GREETING]" }, { role: "assistant", content: fallback }]);
+            setMessages([{ role: "user", content: GREETING_SENTINEL }, { role: "assistant", content: fallback }]);
           }
         } finally {
           reader.releaseLock();
         }
       } catch {
-        setMessages([{ role: "user", content: "[GREETING]" }, { role: "assistant", content: fallback }]);
+        if (!greetingAbort.signal.aborted) {
+          setMessages([{ role: "user", content: GREETING_SENTINEL }, { role: "assistant", content: fallback }]);
+        }
       } finally {
-        setStreaming(false);
+        if (!greetingAbort.signal.aborted) {
+          setStreaming(false);
+        }
       }
     }, 100);
-    return () => { clearTimeout(timer); greetingAbort.abort(); };
+    return () => { clearTimeout(timer); greetingAbort.abort(); sendAbortRef.current?.abort(); };
   }, []);
 
   useEffect(() => {
@@ -324,11 +330,16 @@ export default function ChatWidget() {
     setInput("");
     setStreaming(true);
 
+    sendAbortRef.current?.abort();
+    const sendAbort = new AbortController();
+    sendAbortRef.current = sendAbort;
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updated.filter(m => !(m.role === "user" && m.content === "[GREETING]")), ...(pageUrl && { pageUrl }) }),
+        body: JSON.stringify({ messages: updated.filter(m => !(m.role === "user" && m.content === GREETING_SENTINEL)), ...(pageUrl && { pageUrl }) }),
+        signal: sendAbort.signal,
       });
 
       if (!res.ok) {
@@ -342,7 +353,10 @@ export default function ChatWidget() {
       }
 
       const reader = res.body?.getReader();
-      if (!reader) return;
+      if (!reader) {
+        setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, something went wrong." }]);
+        return;
+      }
 
       try {
         const decoder = new TextDecoder();
@@ -468,7 +482,7 @@ export default function ChatWidget() {
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ scrollBehavior: "smooth" }}>
 
-          {messages.filter(m => !(m.role === "user" && m.content === "[GREETING]")).map((msg, i) => (
+          {messages.filter(m => !(m.role === "user" && m.content === GREETING_SENTINEL)).map((msg, i) => (
             <div
               key={i}
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-slideUp`}
@@ -502,7 +516,7 @@ export default function ChatWidget() {
             </div>
           ))}
 
-          {messages.length === 2 && messages[0].role === "user" && messages[0].content === "[GREETING]" && messages[1].role === "assistant" && messages[1].content && !streaming && (
+          {messages.length === 2 && messages[0].role === "user" && messages[0].content === GREETING_SENTINEL && messages[1].role === "assistant" && messages[1].content && !streaming && (
             <div className="w-full space-y-2 animate-fadeIn">
               {getSuggestions(pageUrl).map((q) => (
                 <button

@@ -128,7 +128,11 @@ export async function POST(request: NextRequest) {
         );
       }
     } catch (err) {
-      console.error("rate-limiter error, failing open", { event: "ratelimit_open", reason: err instanceof Error ? err.message : err });
+      console.error("rate-limiter error, failing closed", { event: "ratelimit_closed", reason: err instanceof Error ? err.message : err });
+      return Response.json(
+        { error: "Service temporarily unavailable. Please try again." },
+        { status: 503, headers: corsHeaders }
+      );
     }
   } else if (process.env.NODE_ENV === "production") {
     return Response.json(
@@ -254,7 +258,8 @@ export async function POST(request: NextRequest) {
               if (!pendingToolCalls.has(tc.index)) {
                 pendingToolCalls.set(tc.index, { id: "", name: "", args: "" });
               }
-              const part = pendingToolCalls.get(tc.index)!;
+              const part = pendingToolCalls.get(tc.index);
+              if (!part) continue;
               if (tc.id) part.id = tc.id;
               if (tc.function?.name) part.name = tc.function.name;
               if (tc.function?.arguments) part.args += tc.function.arguments;
@@ -344,6 +349,8 @@ export async function POST(request: NextRequest) {
               })),
             };
 
+            const followUpAbort = new AbortController();
+            const followUpTimer = setTimeout(() => followUpAbort.abort(), UPSTREAM_TIMEOUT_MS);
             const followUp = await openai.chat.completions.create(
               {
                 model: CHAT_MODEL,
@@ -353,18 +360,22 @@ export async function POST(request: NextRequest) {
                 tool_choice: "none",
                 messages: [...chatMessages, assistantMsg, ...toolResultMsgs],
               },
-              { signal: abort.signal },
+              { signal: followUpAbort.signal },
             );
 
-            for await (const chunk of followUp) {
-              if (abort.signal.aborted) throw new Error("Request timeout");
-              const raw = chunk.choices[0]?.delta?.content;
-              if (raw) {
-                const text = sanitizeText(raw);
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ text })}\n\n`)
-                );
+            try {
+              for await (const chunk of followUp) {
+                if (followUpAbort.signal.aborted) throw new Error("Request timeout");
+                const raw = chunk.choices[0]?.delta?.content;
+                if (raw) {
+                  const text = sanitizeText(raw);
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ text })}\n\n`)
+                  );
+                }
               }
+            } finally {
+              clearTimeout(followUpTimer);
             }
           }
         }

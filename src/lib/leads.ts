@@ -150,14 +150,10 @@ export async function saveLead(lead: Lead): Promise<void> {
     return;
   }
 
-  try {
-    await withTimeout(
-      redis.lpush("shoreline-leads", JSON.stringify(lead)),
-      REDIS_TIMEOUT_MS
-    );
-  } catch (err) {
-    console.error("redis lpush error", err instanceof Error ? err.message : err);
-  }
+  await withTimeout(
+    redis.lpush("shoreline-leads", JSON.stringify(lead)),
+    REDIS_TIMEOUT_MS
+  );
 
   const resend = getResend();
   const to = process.env.LEAD_NOTIFICATION_EMAIL;
@@ -166,25 +162,28 @@ export async function saveLead(lead: Lead): Promise<void> {
       .replace(/[\r\n]/g, "")
       .slice(0, 100);
     try {
-      await resend.emails.send({
-        from:
-          process.env.RESEND_FROM_EMAIL ??
-          "Lab Sync <notifications@labsync.space>",
-        to,
-        subject: `New patient inquiry from ${safeName}`,
-        html: buildLeadEmailHtml(lead),
-        text: [
-          `New patient inquiry from website chat\n`,
-          lead.name ? `Name: ${lead.name}` : null,
-          lead.phone ? `Phone: ${lead.phone}` : null,
-          lead.email ? `Email: ${lead.email}` : null,
-          `Reason: ${lead.reason}`,
-          `\nCaptured: ${lead.capturedAt}`,
-          `\n---\nShoreline Dental Chicago — Automated notification`,
-        ]
-          .filter(Boolean)
-          .join("\n"),
-      });
+      await withTimeout(
+        resend.emails.send({
+          from:
+            process.env.RESEND_FROM_EMAIL ??
+            "Lab Sync <notifications@labsync.space>",
+          to,
+          subject: `New patient inquiry from ${safeName}`,
+          html: buildLeadEmailHtml(lead),
+          text: [
+            `New patient inquiry from website chat\n`,
+            lead.name ? `Name: ${lead.name}` : null,
+            lead.phone ? `Phone: ${lead.phone}` : null,
+            lead.email ? `Email: ${lead.email}` : null,
+            `Reason: ${lead.reason}`,
+            `\nCaptured: ${lead.capturedAt}`,
+            `\n---\nShoreline Dental Chicago — Automated notification`,
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        }),
+        REDIS_TIMEOUT_MS
+      );
     } catch (err) {
       console.error("lead email error", err instanceof Error ? err.message : err);
     }
