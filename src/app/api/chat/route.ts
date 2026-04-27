@@ -128,11 +128,7 @@ export async function POST(request: NextRequest) {
         );
       }
     } catch (err) {
-      console.error("rate-limiter error, failing closed", { event: "ratelimit_closed", reason: err instanceof Error ? err.message : err });
-      return Response.json(
-        { error: "Service temporarily unavailable. Please try again." },
-        { status: 503, headers: corsHeaders }
-      );
+      console.error("rate-limiter error, failing open", { event: "ratelimit_open", reason: err instanceof Error ? err.message : err });
     }
   } else if (process.env.NODE_ENV === "production") {
     return Response.json(
